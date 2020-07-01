@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "options.h"
 #include "PHL.h"
 #include "game.h"
@@ -7,14 +8,69 @@
 char page = 0;
 int optCursor = 0;
 int lastOption = -1;
+#ifdef _SDL
+int musicType = 1;
+int getMusicType()
+{
+	return musicType;
+}
+void setMusicType(int t)
+{
+	if(t!=musicType)
+	{
+		musicType = t;
+		// restart music...
+	}
+}
+#endif
 
-int options()
+#ifdef EMSCRIPTEN
+static char tempDark;
+static int emOnly;
+void optionsSetup(int only)
+{
+	tempDark = roomDarkness;
+	roomDarkness = 0;
+	emOnly = only;
+	page = only?1:0;
+}
+
+int optionsEMStep()
+{
+	int loop = 1;
+	PHL_MainLoop();
+
+	PHL_StartDrawing();
+	
+	optionsDraw();
+	
+	PHL_ScanInput();	
+	int result = optionsStep();
+	
+	PHL_EndDrawing();
+	
+	if (page == 0 && result != -1 && result != 2) {
+		loop = 0;
+	}
+	if (emOnly && page==0) {
+		loop = 0;
+	}
+
+	if(!loop) roomDarkness = tempDark;
+	
+	return (!loop)?result:-1;
+}
+#else
+
+int options(int only)
 {
 	char tempDark = roomDarkness;
 	roomDarkness = 0;
 	
 	int result = -1;
 	char loop = 1;
+
+	if(only) page=1;
 	
 	while (PHL_MainLoop() && loop == 1)
 	{
@@ -30,13 +86,16 @@ int options()
 		if (page == 0 && result != -1 && result != 2) {
 			loop = 0;
 		}
+		if (only && page==0) {
+			loop = 0;
+		}
 	}
 	
 	roomDarkness = tempDark;
 	
 	return result;
 }
-
+#endif
 int optionsStep()
 {		
 	int result = -1;
@@ -148,13 +207,20 @@ int optionsStep()
 			#endif
 
 			#ifdef _SDL
-				// Music volume
+				// Music type
 				if(optCursor == 2) {
+					if(getMusicType()  == 0)
+						setMusicType(1);
+					else
+						setMusicType(0);
+				}
+				// Music volume
+				if(optCursor == 3) {
 					music_volume = (music_volume+1)%5;
 					PHL_MusicVolume(0.25f * music_volume);
 				}
 				// xBRZ
-				if (optCursor == 3) {
+				if (optCursor == 4) {
 					if (getXBRZ() == 0) {
 						setXBRZ(1);
 					}else{
@@ -270,6 +336,16 @@ void optionsDraw()
 		#endif
 
 		#ifdef _SDL
+			// Music type
+			PHL_DrawTextBold("MUSIC", xleft, ydraw, YELLOW);
+			if (getMusicType() == 1) {
+				PHL_DrawTextBold("OGG", xright, ydraw, YELLOW);
+			}
+			else{
+				PHL_DrawTextBold("MIDI", xright, ydraw, YELLOW);
+			}
+			ydraw += ystep;
+			optioncount++;
 			// Music volume
 			PHL_DrawTextBold("MUSIC", xleft, ydraw, YELLOW);
 			char buff[50];

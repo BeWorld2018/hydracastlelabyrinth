@@ -3,13 +3,22 @@
 #include <stdlib.h>
 #include <time.h>
 #include <sys/stat.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #ifdef ODROID
 #define _XTYPEDEF_MASK
 #include <X11/Xlib.h>
 #endif
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 #ifdef __amigaos4__
 static const char* __attribute__((used)) stackcookie = "$STACK: 1000000";
+#endif
+#ifdef __MORPHOS__
+unsigned long __stack = 1000000;
 #endif
 
 void createSaveLocations()
@@ -24,8 +33,10 @@ void createSaveLocations()
 		mkdir("sdmc:/3ds/appdata/HydraCastleLabyrinth/map", 0777);
 	#elif defined(_SDL)
 		char buff[4096];
-		#ifdef __amigaos4__
+		#if defined(__amigaos4__) || defined(__MORPHOS__)
 		strcpy(buff,"PROGDIR:.hydracastlelabyrinth");
+		#elif defined(EMSCRIPTEN)
+		strcpy(buff, "hcl_data");
 		#else
 		strcpy(buff, getenv("HOME"));
 		strcat(buff, "/.hydracastlelabyrinth");
@@ -42,10 +53,25 @@ void createSaveLocations()
 	#endif
 }
 
+#ifdef EMSCRIPTEN
+int fileSynched = 0;
+#endif
 
 int main(int argc, char **argv)
 {	
 	//Setup
+	#ifdef EMSCRIPTEN
+	// that HEAP32 on &fileSynched looks like a hack, but I needed a way to be sure the DB is read before reading the ini files
+	EM_ASM_INT({
+		FS.mkdir('hcl_data'); 
+		FS.mount(IDBFS,{},'hcl_data');
+		Module.print("Will import permanent storage");
+		FS.syncfs(true, function() {
+			Module.print("Permanent storage imported");
+			HEAP32[$0>>2] = 1;
+		});
+	}, &fileSynched);
+	#endif
 	#ifdef _3DS
 		sdmcInit();
 		osSetSpeedupEnable(false);
@@ -62,6 +88,8 @@ int main(int argc, char **argv)
 	wantFullscreen = 0;
 	#endif
 	#ifdef CHIP
+	screenScale = 1;
+	#elif defined(BITTBOY)
 	screenScale = 1;
 	#elif defined(PYRA)
 	//screenScale = 3;
@@ -111,8 +139,8 @@ int main(int argc, char **argv)
 		#ifdef _SDL2
 		SDL_DisplayMode infos;
 		SDL_GetCurrentDisplayMode(0, &infos);
-		screenH = infos.w;
-		screenW = infos.h;
+		screenW = infos.w;
+		screenH = infos.h;
 		#else
 		const SDL_VideoInfo* infos = SDL_GetVideoInfo();
 		screenH = infos->current_h;
@@ -129,7 +157,7 @@ int main(int argc, char **argv)
 		screenW = 320 * screenScale;
 		screenH = 240 * screenScale;
 	}
-	printf("Hydra Caslte Labyrinth, %s %dx%d scale=x%d%s, using Joystick=%d\n", (wantFullscreen || desktopFS)?"Fullscreen":"Windowed", screenW, screenH, screenScale, getXBRZ()?" xBRZ":"", useJoystick);
+	printf("Hydra Castle Labyrinth, %s %dx%d scale=x%d%s, using Joystick=%d\n", (wantFullscreen || desktopFS)?"Fullscreen":"Windowed", screenW, screenH, screenScale, getXBRZ()?" xBRZ":"", useJoystick);
 	#endif
 	
 	srand(time(NULL));

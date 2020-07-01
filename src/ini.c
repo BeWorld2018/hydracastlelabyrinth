@@ -1,9 +1,13 @@
 #include "ini.h"
 #include "game.h"
+#include "options.h"
 #include "PHL.h"
 #include <stdio.h>
 #include <string.h>
 #include "text.h"
+#ifdef EMSCRIPTEN
+#include <emscripten.h>
+#endif
 
 //char* getFileLocation();
 char* trimString(char* orig);
@@ -14,6 +18,7 @@ void blurLoad(char* first, char* second);
 void xbrzLoad(char* first, char* second);
 void languageLoad(char* first, char* second);
 void autosaveLoad(char* first, char* second);
+void musictypeLoad(char* first, char* second);
 void musicvolumeLoad(char* first, char* second);
 
 void iniInit()
@@ -22,23 +27,24 @@ void iniInit()
 	char fullPath[128];
 	{
 		#ifdef _SDL
-		#ifdef __amigaos4__
+		#if defined(__amigaos4__) || defined(__MORPHOS__)
 		strcpy(fullPath, "PROGDIR:.hydracastlelabyrinth/");
+		#elif defined(EMSCRIPTEN)
+		strcpy(fullPath, "hcl_data/");
 		#else
 		strcpy(fullPath, getenv("HOME"));
 		strcat(fullPath, "/.hydracastlelabyrinth/");
 		#endif
+		#elif defined(_3DS)
+		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#else
 		strcpy(fullPath, "");
-		#endif
-		#ifdef _3DS
-			strcat(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#endif
 		strcat(fullPath, "system.ini");
 	}
 	
 	FILE* f;
-	
+
 	if ( (f = fopen(fullPath, "rt")) )
 	{
 		//File exists - read it
@@ -57,17 +63,18 @@ void saveSettings()
 	char fullPath[128];
 	{
 		#ifdef _SDL
-		#ifdef __amigaos4__
+		#if defined(__amigaos4__) || defined(__MORPHOS__)
 		strcpy(fullPath, "PROGDIR:.hydracastlelabyrinth/");
+		#elif defined(EMSCRIPTEN)
+		strcpy(fullPath, "hcl_data/");
 		#else
 		strcpy(fullPath, getenv("HOME"));
 		strcat(fullPath, "/.hydracastlelabyrinth/");
 		#endif
+		#elif defined(_3DS)
+		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#else
 		strcpy(fullPath, "");
-		#endif
-		#ifdef _3DS
-			strcat(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#endif
 		strcat(fullPath, "system.ini");
 	}
@@ -139,14 +146,19 @@ void saveSettings()
 
 		#ifdef _SDL
 		fprintf(f, "\r\n[audio]");
+		fprintf(f, "\r\nmusic_type=%s", getMusicType()?"ogg":"midi");
 		fprintf(f, "\r\nmusic=%d", music_volume);
 		// Audio
 		#endif
 		fclose(f);
 	}
-	
-	
-	
+	#ifdef EMSCRIPTEN
+	EM_ASM(
+		FS.syncfs(false,function () {
+			Module.print("File sych'd")
+		});
+	);
+	#endif
 }
 
 void loadSettings()
@@ -155,17 +167,18 @@ void loadSettings()
 	char fullPath[128];
 	{
 		#ifdef _SDL
-		#ifdef __amigaos4__
+		#if defined(__amigaos4__) || defined(__MORPHOS__)
 		strcpy(fullPath, "PROGDIR:.hydracastlelabyrinth/");
+		#elif defined(EMSCRIPTEN)
+		strcpy(fullPath, "hcl_data/");
 		#else
 		strcpy(fullPath, getenv("HOME"));
 		strcat(fullPath, "/.hydracastlelabyrinth/");
 		#endif
+		#elif defined(_3DS)
+		strcpy(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#else
 		strcpy(fullPath, "");
-		#endif
-		#ifdef _3DS
-			strcat(fullPath, "sdmc:/3ds/appdata/HydraCastleLabyrinth/");
 		#endif
 		strcat(fullPath, "system.ini");
 	}
@@ -208,6 +221,7 @@ void loadSettings()
 									xbrzLoad(fhalf, shalf);
 									languageLoad(fhalf, shalf);
 									autosaveLoad(fhalf, shalf);
+									musictypeLoad(fhalf, shalf);
 									musicvolumeLoad(fhalf, shalf);
 								}
 							}
@@ -220,7 +234,7 @@ void loadSettings()
 			}
 		}
 		fclose(f);
-	}	
+	}
 	
 }
 
@@ -355,6 +369,20 @@ void musicvolumeLoad(char* first, char* second)
 		if (second[0] >= '0' && second[0] <= '4') {
 			music_volume = second[0]-'0';
 			PHL_MusicVolume(0.25f * music_volume);
+		}
+	}
+	#endif
+}
+
+void musictypeLoad(char* first, char* second)
+{
+	#ifdef _SDL
+	if (strcmp(first, "music_type") == 0) {
+		if (strcmp(second, "ogg") == 0) {
+			setXBRZ(1);
+		}
+		if (strcmp(second, "midi") == 0) {
+			setXBRZ(0);
 		}
 	}
 	#endif

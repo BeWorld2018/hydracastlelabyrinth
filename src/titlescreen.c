@@ -11,6 +11,30 @@ void titleScreenSetup();
 int titleScreenStep();
 void titleScreenDraw();
 
+#ifdef EMSCRIPTEN
+int titleEMStep()
+{
+	PHL_MainLoop();
+	//Get input
+	PHL_ScanInput();
+	
+	//Titlescreen step
+	int result = titleScreenStep();
+	
+	//Draw titlescreen
+	PHL_StartDrawing();
+		
+	titleScreenDraw();
+
+	if (result != -1)
+		PHL_DrawRect(0, 0, 640, 480, PHL_NewRGB(0, 0, 0));
+
+	PHL_EndDrawing();		
+
+	return result;
+}
+#endif
+
 int titleScreen()
 {
 	titleScreenSetup();
@@ -55,7 +79,9 @@ void titleScreenSetup()
 	//Check if temp save file exists
 	tempsave = 0;
 	if ( fileExists(savename) ) {
+		#ifndef EMSCRIPTEN
 		tempsave = 1;
+		#endif
 		cursor = 1;		
 	}
 }
@@ -65,7 +91,7 @@ int titleScreenStep()
 	//Move cursor
 	if (btnDown.pressed == 1 || btnSelect.pressed == 1) {
 		cursor += 1;
-		if (cursor > 2) {
+		if (cursor > 3) {
 			cursor = 0;
 		}
 		PHL_PlaySound(sounds[sndPi01], 1);
@@ -74,7 +100,7 @@ int titleScreenStep()
 	if (btnUp.pressed == 1) {
 		cursor -= 1;
 		if (cursor < 0) {
-			cursor = 2;
+			cursor = 3;
 		}
 		PHL_PlaySound(sounds[sndPi01], 1);
 	}
@@ -109,6 +135,8 @@ void titleScreenDraw()
 	//Text
 	PHL_DrawTextBold("NEW GAME", 256, 272, YELLOW);
 	PHL_DrawTextBold("LOAD GAME", 248, 304, YELLOW);
-	PHL_DrawTextBold("EXIT", 288, 336, YELLOW);
-	PHL_DrawTextBold("(C) 2011 E.HASHIMOTO", 160, 400, WHITE);
+	PHL_DrawTextBold("OPTIONS", 264, 336, YELLOW);
+	PHL_DrawTextBold("EXIT", 288, 368, YELLOW);
+	PHL_DrawTextBold("(C) 2011 E.HASHIMOTO", 160, 410, WHITE);
+	PHL_DrawTextBold("GPL2 PTITSEB", 224, 442, WHITE);
 }
