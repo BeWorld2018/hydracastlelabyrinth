@@ -18,6 +18,7 @@
 static const char* __attribute__((used)) stackcookie = "$STACK: 1000000";
 #endif
 #ifdef __MORPHOS__
+#include <unistd.h>
 unsigned long __stack = 1000000;
 __attribute__ ((section(".text"))) UBYTE VString[] = "$VER: HydraCastleLabyrinth (06.10.2020)\r\n";
 #endif
