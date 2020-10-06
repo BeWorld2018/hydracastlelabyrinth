@@ -20,6 +20,7 @@ void languageLoad(char* first, char* second);
 void autosaveLoad(char* first, char* second);
 void musictypeLoad(char* first, char* second);
 void musicvolumeLoad(char* first, char* second);
+void fullscreenLoad(char* first, char* second);
 
 void iniInit()
 {
@@ -150,6 +151,15 @@ void saveSettings()
 		fprintf(f, "\r\nmusic=%d", music_volume);
 		// Audio
 		#endif
+		
+		//fullscreen
+		fprintf(f, "\r\nfullscreen=");
+		if (getFullscreen() == 1) {
+			fprintf(f, "on");
+		}else{
+			fprintf(f, "off");
+		}
+		
 		fclose(f);
 	}
 	#ifdef EMSCRIPTEN
@@ -223,6 +233,7 @@ void loadSettings()
 									autosaveLoad(fhalf, shalf);
 									musictypeLoad(fhalf, shalf);
 									musicvolumeLoad(fhalf, shalf);
+									fullscreenLoad(fhalf, shalf);
 								}
 							}
 							
@@ -379,11 +390,23 @@ void musictypeLoad(char* first, char* second)
 	#ifdef _SDL
 	if (strcmp(first, "music_type") == 0) {
 		if (strcmp(second, "ogg") == 0) {
-			setXBRZ(1);
+			setMusicType(1);			
 		}
 		if (strcmp(second, "midi") == 0) {
-			setXBRZ(0);
+			setMusicType(0);			
+		}
+	}	
+	#endif	
+}
+
+void fullscreenLoad(char* first, char* second)
+{
+	if (strcmp(first, "fullscreen") == 0) {
+		if (strcmp(second, "on") == 0) {
+			setFullscreen(1);
+		}
+		if (strcmp(second, "off") == 0) {
+			setFullscreen(0);
 		}
 	}
-	#endif
 }

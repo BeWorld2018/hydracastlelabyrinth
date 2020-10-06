@@ -173,6 +173,17 @@ char getLanguage()
 	return gameLanguage;
 }
 
+void setFullscreen(int lan)
+{
+	wantFullscreen = lan;
+	PHL_Fullscreen(lan);
+}
+
+int getFullscreen()
+{
+	return wantFullscreen;
+}
+
 void loadMessage(Message* m, FILE* f)
 {
 	unsigned char* buffer = (unsigned char*)malloc(sizeof(unsigned char) * 64);

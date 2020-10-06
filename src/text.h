@@ -30,5 +30,7 @@ void drawTextCentered(Message* m, int x, int y);
 
 void setLanguage(char lan);
 char getLanguage();
+void setFullscreen(int lan);
+int getFullscreen();
 
 #endif

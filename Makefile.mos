@@ -1,0 +1,35 @@
+CC=ppc-morphos-g++-9
+GCC=ppc-morphos-gcc-9
+STRIP		=	strip
+
+CCFLAGS=-O2 -fsigned-char -D_SDL -D_SDL2 -std=c++11 -noixemul -Werror -I/usr/local/include
+CFLAGS=-O2 -noixemul -D_SDL -D_SDL2 -std=gnu99 -I/usr/local/include
+
+OFILES=src/collision.o src/effect.o src/enemy.o src/game.o src/hero.o src/ini.o src/inventory.o src/main.o \
+src/object.o src/options.o src/PHL.o src/platform.o src/qda.o src/stagedata.o src/text.o src/titlescreen.o src/weapon.o	\
+src/sdl2/audio.o src/sdl2/graphics.o src/sdl2/input.o src/sdl2/scale.o src/sdl2/system.o src/enemies/bat.o src/enemies/batboss.o src/enemies/bee.o src/enemies/boar.o src/enemies/boomknight.o src/enemies/crab.o src/enemies/devil.o src/enemies/dodo.o \
+src/enemies/dog.o src/enemies/firewheel.o src/enemies/fish.o src/enemies/garm.o src/enemies/gas.o src/enemies/ghoul.o src/enemies/golem.o src/enemies/gyra.o src/enemies/heads.o src/enemies/hydra.o src/enemies/jellyfish.o src/enemies/knight.o src/enemies/lolidra.o src/enemies/pendulum.o src/enemies/podoboo.o src/enemies/poisonknight.o \
+src/enemies/pumpkin.o src/enemies/seal.o src/enemies/skeleton.o src/enemies/skull.o src/enemies/slime.o src/enemies/slug.o src/enemies/thwomp.o src/enemies/waterjumper.o \
+src/enemies/wizard.o src/xBRZ/xbrz.o
+	
+APP=hydra
+INC=
+LINKPATH=
+#-DUSE_OPENGL -DREDIRECT_OUTPUT
+
+LIBS= -L/usr/local/lib -lSDL2_mixer -lSDL2 -lc -lm  -noixemul
+
+all: $(APP)
+
+$(APP): $(OFILES)
+	$(CC) $(OFILES) $(CCFLAGS) $(LINKPATH) $(LIBS) -o  $(APP).db
+	$(STRIP) --strip-unneeded --remove-section=.comment $(APP).db -o $(APP)
+
+.cpp.o:
+	$(CC) $(CCFLAGS) $(INC) -c $< -o $@
+.c.o:
+	$(GCC) $(CFLAGS) $(INC) -c $< -o $@
+
+clean:
+	rm -rf  $(OFILES)
+	rm -f $(APP)

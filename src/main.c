@@ -19,6 +19,7 @@ static const char* __attribute__((used)) stackcookie = "$STACK: 1000000";
 #endif
 #ifdef __MORPHOS__
 unsigned long __stack = 1000000;
+__attribute__ ((section(".text"))) UBYTE VString[] = "$VER: HydraCastleLabyrinth (06.10.2020)\r\n";
 #endif
 
 void createSaveLocations()
@@ -157,7 +158,9 @@ int main(int argc, char **argv)
 		screenW = 320 * screenScale;
 		screenH = 240 * screenScale;
 	}
+	#ifndef __MORPHOS__
 	printf("Hydra Castle Labyrinth, %s %dx%d scale=x%d%s, using Joystick=%d\n", (wantFullscreen || desktopFS)?"Fullscreen":"Windowed", screenW, screenH, screenScale, getXBRZ()?" xBRZ":"", useJoystick);
+	#endif
 	#endif
 	
 	srand(time(NULL));

@@ -4,7 +4,7 @@
 #include "../qda.h"
 #include "graphics.h"
 #include "scale.h"
-#ifdef __amigaos4__
+#if defined(__amigaos4__) || defined(__MORPHOS__)
 #include "../amigaos.h"
 #endif
 
@@ -56,6 +56,13 @@ void setXBRZ(int active)
 	loadImages();
 }
 
+void PHL_Fullscreen(int fullscreen) {
+	SDL_SetWindowFullscreen(window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0);
+	/*if (!fullscreen) {
+								SDL_SetWindowSize(window,CCFG::GAME_WIDTH, CCFG::GAME_HEIGHT);
+   }*/
+	
+}
 
 SDL_Color PHL_NewRGB(uint8_t r, uint8_t g, uint8_t b)
 {
@@ -78,13 +85,18 @@ void PHL_GraphicsInit()
 		printf("Error creating SDL Window (%s)\n", SDL_GetError());
 		exit(-1);
 	}
-	renderer = SDL_CreateRenderer(window, 0, SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_ACCELERATED);
-	if(!renderer)
-	{
-		printf("Error creating SDL Renderer (%s)\n", SDL_GetError());
-		SDL_DestroyWindow(window);
-		exit(-2);
-	}
+	// WHEN USE OPENGL RENDERER WITH TINYGL FIX, BLACK SCREEN - BUG WITH USING BLENDMODE
+	//renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_TARGETTEXTURE | SDL_RENDERER_ACCELERATED); 
+	//if(!renderer)
+	//{
+		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+		if(!renderer)
+		{
+			printf("Error creating SDL Renderer (%s)\n", SDL_GetError());
+			SDL_DestroyWindow(window);
+			exit(-2);
+		}
+	//}
 	if(desktopFS)
 	{
 		SDL_GetRendererOutputSize(renderer, &screenW, &screenH);
@@ -178,10 +190,7 @@ void PHL_SetColorKey(PHL_Surface surf, int r, int g, int b)
 PHL_Surface PHL_NewSurface(int w, int h)
 {
 	PHL_Surface ret = {0};
-	if(getXBRZ())
-		ret.surf = SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
-	else
-    	ret.surf = SDL_CreateRGBSurface(0, w, h, 32, 0, 0, 0, 0);
+	ret.surf = SDL_CreateRGBSurface(0, w, h, 32, 0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000);
 	ret.tex = NULL;
 	return ret;
 }
@@ -202,7 +211,7 @@ PHL_Surface PHL_LoadBMP(int index)
 	if ( (f = fopen("data/bmp.qda", "rb")) ) {
 		uint8_t* QDAFile = (uint8_t*)malloc(headers[index].size);
 		fseek(f, headers[index].offset, SEEK_SET);
-		int tmp = fread(QDAFile, 1, headers[index].size, f);
+		int dummy = fread(QDAFile, 1, headers[index].size, f);
 		fclose(f);
 		
 		uint16_t w, h;
@@ -210,7 +219,7 @@ PHL_Surface PHL_LoadBMP(int index)
 		//Read data from header
 		memcpy(&w, &QDAFile[18], 2);
 		memcpy(&h, &QDAFile[22], 2);
-		#ifdef __amigaos4__
+		#if defined(__amigaos4__) || defined(__MORPHOS__)
 		BE16(&w); BE16(&h);
 		#endif
 		
@@ -221,76 +230,45 @@ PHL_Surface PHL_LoadBMP(int index)
 		int dx, dy;
 		int count = 0;
 
-		if(getXBRZ()) {
-			Uint32 palette[20][18];
+		Uint32 palette[20][18];
 
-			for (dx = 0; dx < 20; dx++) {
-				for (dy = 0; dy < 16; dy++) {
-					palette[dx][dy] = 255<<24 | ((Uint32)QDAFile[54 + count])<<0 | ((Uint32)QDAFile[54 + count + 1])<<8 | ((Uint32)QDAFile[54 + count + 2])<<16;
-					count += 4;
-				}
-			}
-			Uint32* tmp = NULL;
-			tmp = (Uint32*)malloc(w*h*screenScale*4);
-			Uint32 transp;
-			for (dx = 0; dx < w; dx++) {
-				for (dy = 0; dy < h; dy++) {
-				
-					int pix = dx + w * dy;
-					int px = QDAFile[1078 + pix] / 16;
-					int py = QDAFile[1078 + pix] % 16;
-					//Get transparency from first palette color
-					if (dx == 0 && dy == 0) {					
-						//Darkness special case
-						if (index == 27)
-							transp = 255<<24;
-						else
-							transp = palette[0][0];
-					}
-					
-					Uint32 c = palette[px][py];
-					if(c==transp)
-						c=0;
-					tmp[(h-1-dy)*w+dx] = c;
-				}
-			}
-
-			xbrz_scale((void*)tmp, (void*)surf.surf->pixels, w, h, screenScale);
-			free(tmp);
-		} else {
-			PHL_RGB palette[20][18];
-
-			for (dx = 0; dx < 20; dx++) {
-				for (dy = 0; dy < 16; dy++) {
-					palette[dx][dy].b = QDAFile[54 + count];
-					palette[dx][dy].g = QDAFile[54 + count + 1];
-					palette[dx][dy].r = QDAFile[54 + count + 2];
-					count += 4;
-				}
-			}
-			for (dx = 0; dx < w; dx++) {
-				for (dy = 0; dy < h; dy++) {
-				
-					int pix = dx + w * dy;
-					int px = QDAFile[1078 + pix] / 16;
-					int py = QDAFile[1078 + pix] % 16;
-					//Get transparency from first palette color
-					if (dx == 0 && dy == 0) {					
-						//Darkness special case
-						if (index == 27) {
-							SDL_SetColorKey(surf.surf, SDL_TRUE, SDL_MapRGB(surf.surf->format, 0x00, 0x00, 0x00));
-						}else{
-							SDL_SetColorKey(surf.surf, SDL_TRUE, SDL_MapRGB(surf.surf->format, palette[0][0].r, palette[0][0].g, palette[0][0].b));
-						}
-					}
-					
-					PHL_RGB c = palette[px][py];
-					//PHL_DrawRect(dx * 2, dy * 2, 2, 2, c);
-					SDL_Rect rect = {dx * screenScale, (h-1-dy) * screenScale, screenScale, screenScale};	
-					SDL_FillRect(surf.surf, &rect, SDL_MapRGB(surf.surf->format, c.r, c.g, c.b));
-				}
+		for (dx = 0; dx < 20; dx++) {
+			for (dy = 0; dy < 16; dy++) {
+				palette[dx][dy] = 255<<24 | ((Uint32)QDAFile[54 + count])<<0 | ((Uint32)QDAFile[54 + count + 1])<<8 | ((Uint32)QDAFile[54 + count + 2])<<16;
+				count += 4;
 			}
 		}
+		Uint32* tmpsurf = NULL;
+		tmpsurf = (Uint32*)malloc(w*h*screenScale*4);
+		Uint32 transp;
+		for (dx = 0; dx < w; dx++) {
+			for (dy = 0; dy < h; dy++) {
+			
+				int pix = dx + w * dy;
+				int px = QDAFile[1078 + pix] / 16;
+				int py = QDAFile[1078 + pix] % 16;
+				//Get transparency from first palette color
+				if (dx == 0 && dy == 0) {					
+					//Darkness special case
+					if (index == 27)
+						transp = 255<<24;
+					else
+						transp = palette[0][0];
+				}
+				
+				Uint32 c = palette[px][py];
+				if(c==transp)
+					c=0;
+				tmpsurf[(h-1-dy)*w+dx] = c;
+			}
+		}
+
+		if(getXBRZ()) {
+			xbrz_scale((void*)tmpsurf, (void*)surf.surf->pixels, w, h, screenScale);
+		} else {
+			dumb_scale((void*)tmpsurf, (void*)surf.surf->pixels, w, h, screenScale);
+		}
+		free(tmpsurf);
 		free(QDAFile);
 	}
 	

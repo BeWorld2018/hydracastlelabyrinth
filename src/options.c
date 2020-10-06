@@ -166,8 +166,16 @@ int optionsStep()
 				}
 			}
 			
-			//Autosave
 			if (optCursor == 1) {
+				if (getFullscreen() == 0) {
+					setFullscreen(1);
+				}else{
+					setFullscreen(0);
+				}
+			}
+			
+			//Autosave
+			if (optCursor == 2) {
 				if (getAutoSave() == 0) {
 					setAutoSave(1);
 				}else{
@@ -176,7 +184,7 @@ int optionsStep()
 			}
 			
 			#ifdef _3DS
-				if (optCursor == 2) {
+				if (optCursor == 3) {
 					if (activeScreen->screen == GFX_TOP) {
 						swapScreen(GFX_BOTTOM, GFX_LEFT);
 					}else{
@@ -186,7 +194,7 @@ int optionsStep()
 			#endif
 			
 			#ifdef _PSP
-				if (optCursor == 2) {
+				if (optCursor == 3) {
 					if (getScreenSize() == 0) {
 						setScreenSize(1);
 					}else if (getScreenSize() == 1) {
@@ -197,7 +205,7 @@ int optionsStep()
 				}
 				
 				//Blur
-				if (optCursor == 3) {
+				if (optCursor == 4) {
 					if (getBlur() == 0) {
 						setBlur(1);
 					}else{
@@ -207,20 +215,19 @@ int optionsStep()
 			#endif
 
 			#ifdef _SDL
-				// Music type
-				if(optCursor == 2) {
-					if(getMusicType()  == 0)
+				// Music volume
+				if(optCursor == 3) {
+					if (getMusicType() == 0)
 						setMusicType(1);
 					else
 						setMusicType(0);
 				}
-				// Music volume
-				if(optCursor == 3) {
+				if (optCursor == 4) {
 					music_volume = (music_volume+1)%5;
 					PHL_MusicVolume(0.25f * music_volume);
 				}
 				// xBRZ
-				if (optCursor == 4) {
+				if (optCursor == 5) {
 					if (getXBRZ() == 0) {
 						setXBRZ(1);
 					}else{
@@ -262,8 +269,8 @@ void optionsDraw()
 	}
 	else if (page == 1)
 	{
-		int xleft = 216;
-		int xright = xleft + 160;
+		int xleft = 210;
+		int xright = xleft + 170;
 		
 		int ydrawstart = 144;
 		int ydraw = ydrawstart;
@@ -277,6 +284,16 @@ void optionsDraw()
 		}
 		if (getLanguage() == 0) {
 			PHL_DrawTextBold("JP", xright, ydraw, YELLOW);
+		}
+		
+		ydraw += ystep;
+		optioncount++;
+		//Fullscreen
+		PHL_DrawTextBold("FULLSCREEN", xleft, ydraw, YELLOW);
+		if (getFullscreen() == 1) {
+			PHL_DrawTextBold("ON", xright, ydraw, YELLOW);
+		}else{
+			PHL_DrawTextBold("OFF", xright, ydraw, YELLOW);
 		}
 		
 		ydraw += ystep;

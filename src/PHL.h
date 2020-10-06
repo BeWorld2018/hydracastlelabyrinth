@@ -53,5 +53,5 @@ int WHITE,
 PHL_Surface PHL_LoadQDA(char* fname);
 void PHL_DrawTextBold(char* txt, int dx, int dy, int col);
 void PHL_DrawTextBoldCentered(char* txt, int dx, int dy, int col);
-
+void PHL_Fullscreen(int fullscreen);
 #endif

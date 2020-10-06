@@ -32,16 +32,17 @@ void Input_InitJoystick()
 {
 	SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
 	int n = SDL_NumJoysticks();
-	if (n) {
+	if (n>0) {
+		SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 		if(SDL_IsGameController(0)) {
 			controller = SDL_GameControllerOpen(0);
 			SDL_GameControllerEventState(SDL_ENABLE);
 			const char *name = SDL_GameControllerNameForIndex(0);
-			printf("Using controller %s\n", name?name:"with no name");
+			//printf("Using controller %s\n", name?name:"with no name");
 		} else {
 			joy1 = SDL_JoystickOpen(0);
 			SDL_JoystickEventState(SDL_ENABLE);
-			printf("Using %s\n", SDL_JoystickName(0));
+			//printf("Using Joystick %s\n",  SDL_JoystickName(joy1));
 		}
 	} else {
 		joy1 = NULL;
